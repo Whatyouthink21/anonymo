@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Anonymo AI</title>
+
+<style>
+/* ====== GLOBAL RESET ====== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Inter", system-ui, sans-serif;
+}
+
+body {
+  height: 100vh;
+  background: radial-gradient(circle at top, #111, #000);
+  color: #fff;
+  overflow: hidden;
+}
+
+/* ====== AUTH PAGE ====== */
+#auth {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.auth-box {
+  width: 360px;
+  padding: 30px;
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(15px);
+  border-radius: 16px;
+  box-shadow: 0 0 40px rgba(0,0,0,0.6);
+}
+
+.auth-box h1 {
+  text-align: center;
+  margin-bottom: 20px;
+  font-weight: 700;
+}
+
+.auth-box input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 12px;
+  border-radius: 10px;
+  border: none;
+  background: #111;
+  color: #fff;
+}
+
+.auth-box button {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg,#7c7cff,#4b4bff);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.auth-box p {
+  text-align: center;
+  margin-top: 12px;
+  font-size: 0.9rem;
+  opacity: 0.8;
+  cursor: pointer;
+}
+
+/* ====== CHAT UI ====== */
+#chatApp {
+  display: none;
+  height: 100vh;
+  flex-direction: column;
+}
+
+header {
+  padding: 15px 20px;
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(10px);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+header h2 {
+  font-weight: 700;
+}
+
+header button {
+  background: none;
+  border: none;
+  color: #ff6b6b;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#messages {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.msg {
+  max-width: 70%;
+  margin-bottom: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  line-height: 1.4;
+}
+
+.user {
+  margin-left: auto;
+  background: linear-gradient(135deg,#6a6aff,#4b4bff);
+}
+
+.bot {
+  background: rgba(255,255,255,0.08);
+}
+
+#inputArea {
+  display: flex;
+  padding: 15px;
+  gap: 10px;
+  background: rgba(255,255,255,0.05);
+}
+
+#inputArea input {
+  flex: 1;
+  padding: 12px;
+  border-radius: 12px;
+  border: none;
+  background: #111;
+  color: #fff;
+}
+
+#inputArea button {
+  padding: 12px 18px;
+  border-radius: 12px;
+  border: none;
+  background: #4b4bff;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background: #444;
+  border-radius: 10px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- ===== AUTH ===== -->
+<div id="auth">
+  <div class="auth-box">
+    <h1>Anonymo AI</h1>
+    <input id="username" placeholder="Username" />
+    <input id="password" type="password" placeholder="Password" />
+    <button onclick="auth()">Sign Up / Login</button>
+    <p>Anonymous. Untraceable. Based.</p>
+  </div>
+</div>
+
+<!-- ===== CHAT ===== -->
+<div id="chatApp">
+  <header>
+    <h2>Anonymo AI</h2>
+    <button onclick="logout()">Logout</button>
+  </header>
+
+  <div id="messages"></div>
+
+  <div id="inputArea">
+    <input id="prompt" placeholder="Ask something illegal (jk)…"/>
+    <button onclick="send()">Send</button>
+  </div>
+</div>
+
+<script>
+/* ====== AUTH LOGIC ====== */
+if (localStorage.getItem("anonymo_user")) {
+  showChat();
+}
+
+function auth() {
+  const u = username.value.trim();
+  const p = password.value.trim();
+  if (!u || !p) return alert("Bro fill the fields 💀");
+
+  localStorage.setItem("anonymo_user", u);
+  showChat();
+}
+
+function logout() {
+  localStorage.removeItem("anonymo_user");
+  location.reload();
+}
+
+function showChat() {
+  auth.style.display = "none";
+  chatApp.style.display = "flex";
+}
+
+/* ====== CHAT LOGIC ====== */
+const API_KEY = "AIzaSyA-rYAdih_RnR-2E4-iBjJiEP0nrKNZs_U";
+
+function addMsg(text, cls) {
+  const div = document.createElement("div");
+  div.className = `msg ${cls}`;
+  div.textContent = text;
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+async function send() {
+  const text = prompt.value.trim();
+  if (!text) return;
+
+  addMsg(text, "user");
+  prompt.value = "";
+
+  addMsg("Thinking…", "bot");
+
+  // ===== GEMINI API CALL =====
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text }] }]
+        })
+      }
+    );
+
+    const data = await res.json();
+    messages.lastChild.remove();
+
+    const reply =
+      data.candidates?.[0]?.content?.parts?.[0]?.text ||
+      "I cooked nothing 💀";
+
+    addMsg(reply, "bot");
+  } catch (e) {
+    messages.lastChild.remove();
+    addMsg("API dead or skill issue.", "bot");
+  }
+}
+</script>
+
+</body>
+</html>
